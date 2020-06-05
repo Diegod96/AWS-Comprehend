@@ -1,4 +1,11 @@
 import boto3
+import smtplib
+from datetime import date
+from datetime import datetime
+import datetime
+
+from config import EMAIL_ADDRESS, EMAIL_PASSWORD
+
 
 
 def data_chunk(paragraph):
@@ -38,7 +45,7 @@ def break_sentiment(sentiment_dictionary):
     """
     Breaks up the sentiment result json object to make the results easier to read
     :param sentiment_dictionary:
-    :return:
+    :return: negative, mixed, neutral, positive
     """
     ResultList = list(sentiment_dictionary.values())[0]
     sentiment_list = []
@@ -60,25 +67,44 @@ def break_sentiment(sentiment_dictionary):
         if sentiment == "POSITIVE":
             positive = positive + 1
 
-    print("Amount of negative sentiment: " + str(negative))
-    print("Amount of mixed sentiment: " + str(mixed))
-    print("Amount of neutral sentiment: " + str(neutral))
-    print("Amount of positive sentiment: " + str(positive))
+    return negative, mixed, neutral, positive
 
 
+def email(negative, mixed, neutral, positive):
+    """
+    :param negative:
+    :param mixed:
+    :param neutral:
+    :param positive:
+    """
+    with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
+        smtp.ehlo()
+        smtp.starttls()
+        smtp.ehlo()
+        
+        smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
 
+        today = date.today()
+        date_text = today.strftime("%B %d, %Y")
+        currentDT = datetime.datetime.now()
 
+        subject = "Sentiment Analysis Results"
+        body = f"Sentiment Analysis Results of the wallstreetbets subreddit on {date_text} at {currentDT.strftime('%I:%M:%S %p')}\n" \
+               f"Negative Sentiment Score: {negative}\n" \
+               f"Mixed Sentiment Score: {mixed}\n" \
+               f"Neutral Sentiment Score: {neutral}\n" \
+               f"Positive Sentiment Score: {positive}"
 
+        msg = f"Subject: {subject}\n\n{body}"
 
-
+        smtp.sendmail(EMAIL_ADDRESS, EMAIL_ADDRESS, msg)
 
 
 if __name__ == '__main__':
-
     # phrases = sentiment_analysis()[0]
     # entities = sentiment_analysis()[1]
+
     sentiment = sentiment_analysis()[2]
 
-    break_sentiment(sentiment)
-
-
+    email(break_sentiment(sentiment)[0], break_sentiment(sentiment)[1], break_sentiment(sentiment)[2],
+          break_sentiment(sentiment)[3])
