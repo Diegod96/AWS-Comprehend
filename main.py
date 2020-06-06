@@ -7,7 +7,6 @@ import datetime
 from config import EMAIL_ADDRESS, EMAIL_PASSWORD
 
 
-
 def data_chunk(paragraph):
     """
     Break up the text into 5000 byte chunks
@@ -81,7 +80,7 @@ def email(negative, mixed, neutral, positive):
         smtp.ehlo()
         smtp.starttls()
         smtp.ehlo()
-        
+
         smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
 
         today = date.today()
@@ -98,6 +97,15 @@ def email(negative, mixed, neutral, positive):
         msg = f"Subject: {subject}\n\n{body}"
 
         smtp.sendmail(EMAIL_ADDRESS, EMAIL_ADDRESS, msg)
+
+
+def add_done():
+    s3 = boto3.resource('s3')
+    bucket_name = 'lambda-comprehend-sent-diego'
+    key = 'done/done.txt'
+    text = 'analysis done'
+    object = s3.Object(bucket_name, key)
+    object.put(Body=text)
 
 
 if __name__ == '__main__':
