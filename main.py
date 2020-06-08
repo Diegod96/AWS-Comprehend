@@ -4,7 +4,7 @@ from datetime import date
 from datetime import datetime
 import datetime
 
-from config import EMAIL_ADDRESS, EMAIL_PASSWORD
+from config import *
 
 
 def data_chunk(paragraph):
@@ -28,7 +28,7 @@ def sentiment_analysis():
     """
     s3 = boto3.client("s3")
     bucket_name = "lambda-comprehend-sent-diego"
-    key = "blob.txt"
+    key = "blob/blob.txt"
     file = s3.get_object(Bucket=bucket_name, Key=key)
     paragraph = str(file['Body'].read())
 
@@ -69,34 +69,59 @@ def break_sentiment(sentiment_dictionary):
     return negative, mixed, neutral, positive
 
 
-def email(negative, mixed, neutral, positive):
-    """
-    :param negative:
-    :param mixed:
-    :param neutral:
-    :param positive:
-    """
-    with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
-        smtp.ehlo()
-        smtp.starttls()
-        smtp.ehlo()
+# def email(negative, mixed, neutral, positive):
+#     """
+#     :param negative:
+#     :param mixed:
+#     :param neutral:
+#     :param positive:
+#     """
+#     with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
+#         smtp.ehlo()
+#         smtp.starttls()
+#         smtp.ehlo()
+#
+#         smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+#
+#         today = date.today()
+#         date_text = today.strftime("%B %d, %Y")
+#         currentDT = datetime.datetime.now()
+#
+#         subject = "Sentiment Analysis Results"
+#         body = f"Sentiment Analysis Results of the wallstreetbets subreddit on {date_text} at {currentDT.strftime('%I:%M:%S %p')}\n" \
+#                f"Negative Sentiment Score: {negative}\n" \
+#                f"Mixed Sentiment Score: {mixed}\n" \
+#                f"Neutral Sentiment Score: {neutral}\n" \
+#                f"Positive Sentiment Score: {positive}"
+#
+#         msg = f"Subject: {subject}\n\n{body}"
+#
+#         smtp.sendmail(EMAIL_ADDRESS, EMAIL_ADDRESS, msg)
 
-        smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
 
-        today = date.today()
-        date_text = today.strftime("%B %d, %Y")
-        currentDT = datetime.datetime.now()
+def publish(negative, mixed, neutral, positive):
+    today = date.today()
+    date_text = today.strftime("%B %d, %Y")
 
-        subject = "Sentiment Analysis Results"
-        body = f"Sentiment Analysis Results of the wallstreetbets subreddit on {date_text} at {currentDT.strftime('%I:%M:%S %p')}\n" \
-               f"Negative Sentiment Score: {negative}\n" \
-               f"Mixed Sentiment Score: {mixed}\n" \
-               f"Neutral Sentiment Score: {neutral}\n" \
-               f"Positive Sentiment Score: {positive}"
+    negative = (negative / 25) * 100
+    mixed = (mixed / 25) * 100
+    neutral = (neutral / 25) * 100
+    positive = (positive / 25) * 100
 
-        msg = f"Subject: {subject}\n\n{body}"
 
-        smtp.sendmail(EMAIL_ADDRESS, EMAIL_ADDRESS, msg)
+    currentDT = datetime.datetime.now()
+    arn = "arn:aws:sns:us-east-1:743362587039:RedditTopic"
+    sns_client = boto3.client("sns",
+                              aws_access_key_id=access_key,
+                              aws_secret_access_key=secret_key,
+                              region_name='us-east-1')
+    message = f"Sentiment Analysis Results of the wallstreetbets subreddit on {date_text} at {currentDT.strftime('%I:%M:%S %p')}\n" \
+              f"Amount of Negative Sentiment: {negative}%\n" \
+              f"Amount of Mixed Sentiment: {mixed}%\n" \
+              f"Amount of Neutral Sentiment: {neutral}%\n" \
+              f"Amount of Positive Sentiment: {positive}%"
+    response = sns_client.publish(TopicArn=arn, Message=message)
+    print(response)
 
 
 def add_done():
@@ -114,5 +139,7 @@ if __name__ == '__main__':
 
     sentiment = sentiment_analysis()[2]
 
-    email(break_sentiment(sentiment)[0], break_sentiment(sentiment)[1], break_sentiment(sentiment)[2],
-          break_sentiment(sentiment)[3])
+    publish(break_sentiment(sentiment)[0], break_sentiment(sentiment)[1], break_sentiment(sentiment)[2],
+            break_sentiment(sentiment)[3])
+
+    add_done()
