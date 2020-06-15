@@ -1,4 +1,3 @@
-EMAIL_ADDRESS = 'ddphillyfan@gmail.com'
-EMAIL_PASSWORD = 'thbqwbhnadrzfzzw'
-access_key = 'AKIAISV22KVFKEWHWL3Q'
-secret_key = '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'
+
+access_key = 'AKIAI5PCEGUPR6ZBRFKA'
+secret_key = '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'

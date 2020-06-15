@@ -29,7 +29,8 @@ def sentiment_analysis():
     s3 = boto3.client("s3")
     bucket_name = "lambda-comprehend-sent-diego"
     key = "blob/blob.txt"
-    file = s3.get_object(Bucket=bucket_name, Key=key)
+    file = s3.get_object(Bucket=bucket_name,
+                         Key=key)
     paragraph = str(file['Body'].read())
 
     comprehend = boto3.client("comprehend")
@@ -69,34 +70,6 @@ def break_sentiment(sentiment_dictionary):
     return negative, mixed, neutral, positive
 
 
-# def email(negative, mixed, neutral, positive):
-#     """
-#     :param negative:
-#     :param mixed:
-#     :param neutral:
-#     :param positive:
-#     """
-#     with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
-#         smtp.ehlo()
-#         smtp.starttls()
-#         smtp.ehlo()
-#
-#         smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-#
-#         today = date.today()
-#         date_text = today.strftime("%B %d, %Y")
-#         currentDT = datetime.datetime.now()
-#
-#         subject = "Sentiment Analysis Results"
-#         body = f"Sentiment Analysis Results of the wallstreetbets subreddit on {date_text} at {currentDT.strftime('%I:%M:%S %p')}\n" \
-#                f"Negative Sentiment Score: {negative}\n" \
-#                f"Mixed Sentiment Score: {mixed}\n" \
-#                f"Neutral Sentiment Score: {neutral}\n" \
-#                f"Positive Sentiment Score: {positive}"
-#
-#         msg = f"Subject: {subject}\n\n{body}"
-#
-#         smtp.sendmail(EMAIL_ADDRESS, EMAIL_ADDRESS, msg)
 
 
 def publish(negative, mixed, neutral, positive):
